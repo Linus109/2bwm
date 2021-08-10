@@ -27,6 +27,7 @@
 #include <xcb/xcb_ewmh.h>
 #include <xcb/xcb_xrm.h>
 #include <X11/keysym.h>
+#include <xcb/xproto.h>
 #include "list.h"
 #include "definitions.h"
 #include "types.h"
@@ -216,7 +217,8 @@ void
 prevworkspace()
 {
 	curws > 0 ? changeworkspace_helper(curws - 1)
-		: changeworkspace_helper(WORKSPACES-1);}
+		: changeworkspace_helper(WORKSPACES-1);
+}
 
 void
 twobwm_exit()
@@ -952,7 +954,7 @@ setupwin(xcb_window_t win)
 	client->max_width     = screen->width_in_pixels;
 	client->max_height    = screen->height_in_pixels;
 	client->width_inc     = client->height_inc = 1;
-	client->usercoord     = client->vertmaxed = client->hormaxed
+	client->usercoord     = client->vertmaxed = client->hormaxed = client->maxedborder
 		= client->maxed = client->unkillable= client->fixed
 		= client->ignore_borders= client->iconic= false;
 
@@ -2050,7 +2052,40 @@ unmax(struct client *client)
 void
 maximize(const Arg *arg)
 {
-	maxwin(focuswin, 1);
+	// maxwin(focuswin, 1);
+
+	int16_t mon_x, mon_y, temp = 0;
+	int16_t mon_width, mon_height;
+
+	if (NULL == focuswin)
+		return;
+
+	if (focuswin->maxedborder) {
+		unmax(focuswin);
+		focuswin->maxedborder = false;
+		fitonscreen(focuswin);
+		setborders(focuswin, true);
+		return;
+	}
+
+	getmonsize(1, &mon_x, &mon_y, &mon_width, &mon_height, focuswin);
+	saveorigsize(focuswin);
+	noborder(&temp, focuswin,true);
+
+	focuswin->x = mon_x;
+	focuswin->y = mon_y;
+	focuswin->width = mon_width - (conf.borderwidth * 2);
+	focuswin->height = mon_height - (conf.borderwidth * 2);
+
+	moveresize(focuswin->id, focuswin->x, focuswin->y, focuswin->width,
+			focuswin->height);
+
+	noborder(&temp, focuswin,false);
+	raise_current_window();
+	centerpointer(focuswin->id,focuswin);
+	setborders(focuswin,true);
+    focuswin->maxedborder = true;
+	xcb_flush(conn);
 }
 
 void
@@ -3266,7 +3301,6 @@ setup(int scrno)
 		if (xcb_xrm_resource_get_string(db, "twobwm.enable_compton", NULL, &value) >= 0)
 			conf.enable_compton = strcmp(value, "true") == 0;
 	}
-
 	xcb_xrm_database_free(db);
 
 	for (i=0; i<NB_ATOMS; i++)
