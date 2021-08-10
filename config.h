@@ -13,7 +13,9 @@ static const float    resize_keep_aspect_ratio= 1.03;
 ///---Offsets---///
 /*0)offsetx          1)offsety
  *2)maxwidth         3)maxheight */
-static const uint8_t offsets[] = {0,0,0,0};
+static const uint8_t def_off = 10;
+static const uint8_t bar_height = 32;
+static const uint8_t offsets[] = {def_off, def_off + bar_height, def_off * 2, def_off * 2 + bar_height};
 ///---Colors---///
 /*0)focuscol         1)unfocuscol
  *2)fixedcol         3)unkilcol
@@ -32,15 +34,18 @@ static const bool inverted_colors = true;
 /*0) Outer border size. If you put this negative it will be a square.
  *1) Full borderwidth    2) Magnet border size
  *3) Resize border size  */
-static const uint8_t borders[] = {3,5,5,4};
+static const uint8_t borders[] = {3,6,5,3};
 /* Windows that won't have a border.
  * It uses substring comparison with what is found in the WM_NAME
  * attribute of the window. You can test this using `xprop WM_NAME`
  */
 #define LOOK_INTO "WM_NAME"
-static const char *ignore_names[] = {"bar", "xclock"};
+static const char *ignore_names[] = {"bar", "xclock", "Tint2"};
 ///--Menus and Programs---///
-static const char *menucmd[]   = { "", NULL };
+static const char *menucmd[]   = { "rofi", "-show", "combi", NULL };
+static const char *windowswitchercmd[] = { "rofi_switcher", "switcher", NULL };
+static const char *shutdownmenucmd[]   = { "rofi_shutdown", NULL };
+static const char *termcmd[]   = { "alacritty", NULL };
 ///--Custom foo---///
 static void halfandcentered(const Arg *arg)
 {
@@ -164,8 +169,8 @@ static key keys[] = {
     //unfold horizontally
     {  MOD |SHIFT|CONTROL,XK_n,          maxhalf,           {.i=TWOBWM_MAXHALF_UNFOLD_HORIZONTAL}},
     // Next/Previous screen
-    {  MOD ,              XK_comma,      changescreen,      {.i=TWOBWM_NEXT_SCREEN}},
-    {  MOD ,              XK_period,     changescreen,      {.i=TWOBWM_PREVIOUS_SCREEN}},
+    {  MOD ,              XK_period,     changescreen,      {.i=TWOBWM_NEXT_SCREEN}},
+    {  MOD ,              XK_comma,      changescreen,      {.i=TWOBWM_PREVIOUS_SCREEN}},
     // Raise or lower a window
     {  MOD ,              XK_r,          raiseorlower,      {}},
     // Next/Previous workspace
@@ -193,10 +198,13 @@ static key keys[] = {
     {  MOD |SHIFT,        XK_Right,      cursor_move,       {.i=TWOBWM_CURSOR_RIGHT}},
     {  MOD |SHIFT,        XK_Left,       cursor_move,       {.i=TWOBWM_CURSOR_LEFT}},
     // Start programs
-    {  MOD ,              XK_w,          start,             {.com = menucmd}},
+    {  MOD ,              XK_Return,     start,             {.com = termcmd}},
+    {  MOD ,              XK_p,          start,             {.com = menucmd}},
+    {  MOD |CONTROL,      XK_p,          start,             {.com = shutdownmenucmd}},
+    {  MOD |SHIFT,        XK_p,          start,             {.com = windowswitchercmd}},
     // Exit or restart 2bwm
-    {  MOD |CONTROL,      XK_q,          twobwm_exit,       {.i=0}},
-    {  MOD |CONTROL,      XK_r,          twobwm_restart,    {.i=0}},
+    {  MOD |SHIFT,        XK_q,          twobwm_exit,       {.i=0}},
+    {  MOD |SHIFT,        XK_r,          twobwm_restart,    {.i=0}},
     {  MOD ,              XK_space,      halfandcentered,   {.i=0}},
     {  MOD ,              XK_s,          toggle_sloppy,     {.com = sloppy_switch_cmd}},
     // Change current workspace
