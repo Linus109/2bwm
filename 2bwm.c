@@ -1729,6 +1729,8 @@ resizestep(const Arg *arg)
 		focuswin->vertmaxed = false;
 	if (focuswin->hormaxed)
 		focuswin->hormaxed  = false;
+    if (focuswin->maxedborder)
+        focuswin->maxedborder = false;
 
 	resizelim(focuswin);
 	centerpointer(focuswin->id,focuswin);
@@ -2052,8 +2054,6 @@ unmax(struct client *client)
 void
 maximize(const Arg *arg)
 {
-	// maxwin(focuswin, 1);
-
 	int16_t mon_x, mon_y, temp = 0;
 	int16_t mon_width, mon_height;
 
